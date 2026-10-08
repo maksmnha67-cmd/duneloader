@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#14171c;--ink:#e8ecf6;--mute:#3a4a80;--mute2:#5b6ea8;--inner:#12161d;--grid:rgba(70,100,180,.16);
+--r1:#4f73bd;--r2:#223566;--g1:#4a6bb0;--g2:#2c4378;--ok:#2f8f4e;--bad:#c23a3a;--stop1:#d44;--stop2:#8f1e1e}
+body.light{--bg:#eef1f7;--ink:#141a2c;--mute:#7d8bb5;--mute2:#5568a0;--inner:#fbfcff;--grid:rgba(60,90,170,.13);--r1:#7f9ddb;--r2:#4864a8}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;transition:background .3s}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+svg{display:block}
+#app{display:flex;width:100%;height:100%}
+/* left */
+.left{position:relative;flex:0 0 190px;background:linear-gradient(180deg,rgba(6,10,24,.35),rgba(6,10,24,.8)),url(/bg.jpg) 61% center/cover #070b16;color:#fff}
+.ver{position:absolute;top:19px;left:18px;font-size:10.5px;font-weight:600;color:#fff}
+.ttl{position:absolute;left:20px;bottom:86px;font-size:26px;font-weight:600;line-height:1.14;letter-spacing:-.2px}
+.tag{position:absolute;left:18px;bottom:20px;width:154px}
+/* shared look */
+.glass{display:flex;align-items:center;justify-content:center;border-radius:18px;font-weight:600;color:#d6ddf0;background:linear-gradient(180deg,var(--g1),var(--g2));box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -6px 14px rgba(8,16,48,.35),0 8px 22px rgba(18,36,100,.35);transition:.18s}
+.glass:hover{filter:brightness(1.12);transform:translateY(-1px)}.glass:active{transform:scale(.97)}
+.ring{position:relative;display:block;border-radius:20px;padding:5px;background:linear-gradient(180deg,var(--r1),var(--r2));box-shadow:0 0 0 1px rgba(120,160,255,.12),0 8px 22px rgba(20,40,110,.3);transition:.18s}
+.ring>.in{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:15px;background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/14px 14px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/14px 14px,var(--inner);color:var(--mute);font-weight:700;font-size:16px}
+button.ring:hover{filter:brightness(1.15)}button.ring:active{transform:scale(.97)}
+.ring input{width:100%;height:100%;background:none;border:0;outline:0;text-align:center;font:inherit;font-weight:700;font-size:16px;color:var(--mute2);user-select:text;-webkit-user-select:text}
+.ring input::placeholder{color:var(--mute)}
+.ring:focus-within{filter:brightness(1.2)}
+/* right */
+.right{position:relative;flex:1;min-width:0}
+.drag{position:absolute;inset:0 0 auto 0;height:40px;z-index:5}
+.winctl{position:absolute;top:14px;right:14px;display:flex;gap:6px;z-index:9}
+.wb{width:20px;height:20px;border-radius:7px;font-size:14px;font-weight:700;line-height:18px;text-align:center;color:#0f1530;background:#2c3f86;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.wb:hover{filter:brightness(1.3)}.wb.x:hover{background:var(--bad);color:#fff}
+.screen{position:absolute;inset:0;opacity:0;pointer-events:none;transform:translateX(24px);transition:opacity .3s,transform .45s cubic-bezier(.22,1,.36,1)}
+.screen.active{opacity:1;pointer-events:all;transform:none}
+.rail{position:absolute;right:18px;top:56px;display:flex;flex-direction:column;align-items:center;gap:12px;z-index:6;transition:.3s}
+.rail.hide{opacity:0;pointer-events:none}
+.rb{width:38px;height:38px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:.18s}
+.rb svg{width:18px;height:18px}.rb:hover{background:rgba(80,110,190,.2)}
+.rb.on{color:#d6ddf0;background:linear-gradient(180deg,var(--g1),var(--g2));box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 16px rgba(18,36,100,.35)}
+.h{position:absolute;left:24px;top:22px;font-size:17px;font-weight:700}
+/* key */
+#flash{position:absolute;left:50%;top:50px;transform:translateX(-50%);width:210px;height:54px;transition:.3s;opacity:0}
+#flash.show{opacity:1}#flash .in{font-size:14px;text-align:center;padding:0 8px;line-height:1.1}
+#flash.ok{background:linear-gradient(180deg,#3da362,#1d5a33)}#flash.ok .in{color:#4fcf7a;background-color:#0f1a14}
+#flash.bad{background:linear-gradient(180deg,#d05555,#6b1a1a)}#flash.bad .in{color:#e86a6a;background-color:#1a1010}
+#flash.wait .in{color:var(--mute2)}
+.kin{position:absolute;left:50%;top:136px;transform:translateX(-50%);width:230px;height:62px}
+.kbtn{position:absolute;left:50%;transform:translateX(-50%);height:50px}
+#bLogin{top:216px;width:130px}#bSkip{top:280px;width:110px}
+/* main */
+.prev{position:absolute;left:22px;top:54px;width:326px;height:182px;border-radius:20px;background:linear-gradient(rgba(6,10,24,.15),rgba(6,10,24,.45)),url(/bg.jpg) center/cover;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(110,150,255,.12)}
+.chip{position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(8,12,28,.7);border:1px solid rgba(120,160,255,.25);color:#cdd8f5;backdrop-filter:blur(6px)}
+.chip.beta{color:#7fe0a0;border-color:rgba(80,200,130,.4)}
+#play{position:absolute;left:22px;top:258px;width:56px;height:56px;border-radius:18px}
+#play svg{width:24px;height:24px}
+#play.run{background:linear-gradient(180deg,var(--stop1),var(--stop2));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 8px 22px rgba(120,20,20,.4)}
+#play.spin svg{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.desc{position:absolute;left:94px;top:262px;width:250px;font-size:13.5px;font-weight:600;line-height:1.3}
+#mem{position:absolute;left:22px;top:340px;height:42px;padding:0 20px;border-radius:14px;font-size:13.5px}
+/* settings */
+.f{position:absolute;left:24px;width:352px}
+.lbl{font-size:12px;font-weight:600;color:var(--mute2);margin-bottom:6px;display:flex;justify-content:space-between}
+.row{display:flex;gap:8px}
+.nick{height:44px;flex:1}.nick input{font-size:14px}.nick .in{font-size:14px}
+.sv{width:96px;height:44px;border-radius:14px;font-size:12.5px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:8px;background:var(--inner);outline:0;box-shadow:0 0 0 2px var(--r2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:18px;border-radius:8px;background:linear-gradient(180deg,var(--g1),var(--g2));border:2px solid var(--bg);cursor:grab}
+.mini{height:42px;flex:1}.mini .in{font-size:12.5px}
+.seg{display:flex;flex:1;gap:6px}
+.sg{flex:1;height:42px;border-radius:13px;font-size:12px;font-weight:700;color:var(--mute2);background:var(--inner);box-shadow:inset 0 0 0 1.5px var(--r2);display:flex;align-items:center;justify-content:center}
+.sg svg{width:15px;height:15px}.sg.on{color:#d6ddf0;background:linear-gradient(180deg,var(--g1),var(--g2));box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+#bBack{position:absolute;left:24px;bottom:20px;width:352px;height:44px;border-radius:14px;font-size:13px}
+/* loading */
+.big{position:absolute;left:24px;top:26px;font-size:20px;font-weight:700}
+#lst{position:absolute;left:24px;top:68px;font-size:13.5px;font-weight:600;color:var(--mute2)}
+#chk{position:absolute;left:50%;top:116px;margin-left:-26px;width:52px;height:52px;display:none}
+#chk circle{stroke:#4fcf7a;stroke-width:2;fill:none}#chk path{stroke:#4fcf7a;stroke-width:3;fill:none;stroke-dasharray:48;stroke-dashoffset:48;animation:dr .5s .2s forwards}
+@keyframes dr{to{stroke-dashoffset:0}}
+.stats{position:absolute;left:24px;width:402px;top:208px;display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--mute2)}
+.bar{position:absolute;left:24px;width:402px;top:230px;height:22px;padding:4px;border-radius:12px}
+.bar>div{height:100%;border-radius:8px;background:var(--inner);overflow:hidden}
+#fill{height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,var(--g2),var(--g1));transition:width .2s}
+#err{position:absolute;left:24px;width:402px;top:268px;height:84px;overflow:auto;display:none;font-size:10.5px;line-height:1.35;color:#e86a6a;background:#1a1010;border-radius:12px;padding:8px 10px;user-select:text;white-space:pre-wrap;word-break:break-all}
+#bCancel{position:absolute;left:24px;bottom:22px;font-size:13px;font-weight:600;color:var(--mute2)}#bCancel:hover{color:var(--ink)}
+/* toast */
+#toast{position:absolute;left:50%;bottom:16px;transform:translate(-50%,30px);opacity:0;padding:9px 16px;border-radius:14px;background:rgba(14,20,44,.95);border:1px solid rgba(120,160,255,.25);font-size:12px;font-weight:600;color:#d6ddf0;z-index:20;pointer-events:none;transition:.3s;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,0)}#toast b{color:var(--mute2);margin-right:6px}
+</style></head>
+<body class="dark">
+<div id="app">
+  <div class="left">
+    <div class="ver">minecraft 1.21.11 / launcher 2.0</div>
+    <div class="ttl">Dune<br>Visuals</div>
+    <button class="glass tag" style="height:46px;font-size:13px" onclick="post('open_site')">the best visuals</button>
+  </div>
+  <div class="right">
+    <div class="drag" onmousedown="post('drag_window')"></div>
+    <div class="winctl"><button class="wb" onclick="post('minimize')">&#8722;</button><button class="wb x" onclick="post('close')">&times;</button></div>
+
+    <div class="rail hide" id="rail">
+      <button class="rb" id="rHome" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
+      <button class="rb" id="rSet" onclick="goSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+      <button class="rb" onclick="post('open_site')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20 15.3 15.3 0 010-20z"/></svg></button>
+    </div>
+
+    <!-- key -->
+    <div class="screen active" id="s-key">
+      <div class="ring" id="flash"><div class="in" id="flashT"></div></div>
+      <div class="ring kin"><div class="in"><input id="keyIn" maxlength="64" spellcheck="false" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"></div></div>
+      <button class="ring kbtn" id="bLogin" onclick="doLogin()"><span class="in" id="tLogin"></span></button>
+      <button class="ring kbtn" id="bSkip" onclick="doSkip()"><span class="in" id="tSkip"></span></button>
+    </div>
+
+    <!-- main -->
+    <div class="screen" id="s-main">
+      <div class="prev"><div class="chip" id="chip">default</div></div>
+      <button class="glass" id="play" onclick="post('action_button')"></button>
+      <div class="desc" id="desc"></div>
+      <button class="glass" id="mem" onclick="goSettings()"></button>
+    </div>
+
+    <!-- settings -->
+    <div class="screen" id="s-set">
+      <div class="h" id="hSet"></div>
+      <div class="f" style="top:62px"><div class="lbl" id="lNick"></div>
+        <div class="row"><div class="ring nick"><div class="in"><input id="nickIn" maxlength="16" spellcheck="false" autocomplete="off" placeholder="Player"></div></div><button class="glass sv" id="bSave" onclick="saveNick()"></button></div></div>
+      <div class="f" style="top:138px"><div class="lbl"><span id="lRam"></span><span id="ramV"></span></div>
+        <input type="range" id="ram" min="1024" max="16384" step="128" value="4028"></div>
+      <div class="f row" style="top:196px">
+        <button class="ring mini" onclick="post('open_mods')"><span class="in" id="tMods"></span></button>
+        <button class="ring mini" onclick="doLogout()"><span class="in" id="tKey"></span></button></div>
+      <div class="f row" style="top:256px">
+        <div class="seg"><button class="sg" id="gRu" onclick="setLang('ru')">RU</button><button class="sg" id="gEn" onclick="setLang('en')">EN</button></div>
+        <div class="seg"><button class="sg" id="gDark" onclick="setTheme('dark')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg></button><button class="sg" id="gLight" onclick="setTheme('light')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+      <button class="glass" id="bBack" onclick="goHome()"></button>
+    </div>
+
+    <!-- loading -->
+    <div class="screen" id="s-load">
+      <div class="big" id="lTitle"></div><div id="lst"></div>
+      <svg id="chk" viewBox="0 0 52 52"><circle cx="26" cy="26" r="25"/><path d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
+      <div class="stats"><span id="cur">0.0MB</span><span id="tot">...</span></div>
+      <div class="ring bar"><div><div id="fill"></div></div></div>
+      <div id="err"></div>
+      <button id="bCancel" onclick="cancelInstall()"></button>
+    </div>
+    <div id="toast"><b id="tT"></b><span id="tD"></span></div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id),post=m=>window.chrome.webview.postMessage(m);
+const SVG_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+SVG_STOP='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+SVG_SPIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>';
+let lang='ru',theme='dark',nick='Player',tier='none',running=false,busy=false,ram=4028,tt,ft;
+const L={ru:{key:'ваш ключ',login:'войти',skip:'пропустить',checking:'проверка...',ok:'вход выполнен',fail:'ошибка входа',empty:'введите ключ',
+desc:'Максимальная оптимизация, скорость и комфорт.',run:'клиент запущен\nнажмите, чтобы остановить.',mem:'память',settings:'Настройки',nick:'Никнейм',save:'Сохранить',
+ram:'Оперативная память',mods:'папка модов',chkey:'сменить ключ',back:'Сохранить и выйти',loading:'Загрузка',cancel:'Отменить',done:'Готово',
+nSaved:'Никнейм сохранён',nEmpty:'Введите никнейм',cfg:'Конфигурация сохранена',proc:'Процесс',cache:'Запущен из кеша',ended:'Игра завершена',started:'Клиент запущен',
+st_dl_java:'Скачивание Java...',st_unz_java:'Распаковка Java...',st_dl_mod:'Скачивание мода...',st_upd_mod:'Обновление мода...',st_dl_fabric:'Скачивание Fabric API...',
+st_dl_game:'Скачивание Minecraft...',st_unz_game:'Распаковка Minecraft...',st_dl_assets:'Скачивание ассетов...',st_unz_assets:'Распаковка ассетов...',st_error:'Ошибка!',
+e_invalid_key:'неверный ключ',e_revoked:'ключ отключён',e_expired:'срок ключа истёк',e_bound_other_pc:'ключ привязан к другому ПК',e_rate_limited:'слишком много попыток',e_network:'нет соединения',e_signature:'ошибка подписи сервера',e_config:'лаунчер не настроен'},
+en:{key:'your key',login:'login',skip:'skip',checking:'checking...',ok:'login successful',fail:'login failed',empty:'enter a key',
+desc:'maximum optimization, speed, and comfort.',run:'client running\nclick to stop.',mem:'memory',settings:'Settings',nick:'Nickname',save:'Save',
+ram:'RAM',mods:'mods folder',chkey:'change key',back:'Save & Exit',loading:'Loading',cancel:'Cancel',done:'Done',
+nSaved:'Nickname saved',nEmpty:'Enter a nickname',cfg:'Configuration saved',proc:'Process',cache:'Launched from cache',ended:'Game terminated',started:'Client launched',
+st_dl_java:'Downloading Java...',st_unz_java:'Extracting Java...',st_dl_mod:'Downloading mod...',st_upd_mod:'Updating mod...',st_dl_fabric:'Downloading Fabric API...',
+st_dl_game:'Downloading Minecraft...',st_unz_game:'Extracting Minecraft...',st_dl_assets:'Downloading assets...',st_unz_assets:'Extracting assets...',st_error:'Error!',
+e_invalid_key:'invalid key',e_revoked:'key disabled',e_expired:'key expired',e_bound_other_pc:'key is bound to another PC',e_rate_limited:'too many attempts',e_network:'no connection',e_signature:'server signature error',e_config:'launcher not configured'}};
+const t=k=>L[lang][k]||k;
+function applyLang(){
+ $('keyIn').placeholder=t('key');$('tLogin').innerText=t('login');$('tSkip').innerText=t('skip');
+ $('desc').innerText=running?t('run'):t('desc');$('hSet').innerText=t('settings');$('lNick').innerText=t('nick');$('bSave').innerText=t('save');
+ $('lRam').innerText=t('ram');$('tMods').innerText=t('mods');$('tKey').innerText=t('chkey');$('bBack').innerText=t('back');
+ $('lTitle').innerText=t('loading');$('bCancel').innerText=t('cancel');setMem();
+ $('gRu').classList.toggle('on',lang==='ru');$('gEn').classList.toggle('on',lang==='en');}
+function applyTheme(){document.body.className=theme;$('gDark').classList.toggle('on',theme==='dark');$('gLight').classList.toggle('on',theme==='light');}
+function setMem(){$('mem').innerText=t('mem')+': '+(Math.round(ram/102.4)/10)+' gb';$('ramV').innerText=ram+'MB';}
+function show(n){['key','main','set','load'].forEach(s=>$('s-'+s).classList.toggle('active',s===n));
+ $('rail').classList.toggle('hide',n==='key'||n==='load');$('rHome').classList.toggle('on',n==='main');$('rSet').classList.toggle('on',n==='set');}
+function toast(a,b){$('tT').innerText=a;$('tD').innerText=b;$('toast').classList.add('show');clearTimeout(tt);tt=setTimeout(()=>$('toast').classList.remove('show'),3000);}
+function flash(kind,txt,keep){const f=$('flash');f.className='ring show '+kind;$('flashT').innerText=txt;clearTimeout(ft);if(!keep)ft=setTimeout(()=>f.classList.remove('show'),2800);}
+function setTier(x){tier=x;const c=$('chip');c.innerText=x==='beta'?'beta':'default';c.className='chip'+(x==='beta'?' beta':'');}
+function setRun(r){running=r;const b=$('play');b.className='glass'+(r?' run':'');b.innerHTML=r?SVG_STOP:SVG_PLAY;$('desc').innerText=r?t('run'):t('desc');$('desc').style.whiteSpace=r?'pre-line':'normal';}
+function setBusy(v){busy=v;if(running)return;const b=$('play');b.className='glass'+(v?' spin':'');b.innerHTML=v?SVG_SPIN:SVG_PLAY;}
+function lock(v){$('bLogin').disabled=v;$('bSkip').disabled=v;$('keyIn').disabled=v;}
+function doLogin(){const k=$('keyIn').value.trim().replace(/[^A-Za-z0-9_\-]/g,'');if(!k){flash('bad',t('empty'));return;}lock(true);flash('wait',t('checking'),true);post('login:'+k);}
+function doSkip(){post('skip');}
+function doLogout(){post('logout');$('keyIn').value='';show('key');}
+function goHome(){if($('s-set').classList.contains('active')){const r=$('ram').value;ram=+r;setMem();post('save_ram:'+r);toast(t('settings'),t('cfg'));}show('main');}
+function goSettings(){$('nickIn').value=nick;$('ram').value=ram;setMem();show('set');}
+function saveNick(){let n=$('nickIn').value.trim().replace(/[^A-Za-z0-9_]/g,'').substring(0,16);if(!n){toast(t('nick'),t('nEmpty'));return;}$('nickIn').value=n;nick=n;post('save_nick:'+n);toast(t('nick'),t('nSaved')+': '+n);}
+function setLang(l){lang=l;applyLang();post('set_lang:'+l);}
+function setTheme(x){theme=x;applyTheme();post('set_theme:'+x);}
+function cancelInstall(){post('cancel_install');show('main');}
+$('ram').addEventListener('input',function(){$('ramV').innerText=this.value+'MB';});
+function startLoad(){$('chk').style.display='none';$('fill').style.width='0%';$('err').style.display='none';$('err').innerText='';$('lst').style.color='';show('load');}
+function progress(p,c,tot,s){$('fill').style.width=p+'%';$('cur').innerText=c;$('tot').innerText=tot;$('lst').innerText=t('st_'+s);}
+function err(m){const e=$('err');e.style.display='block';e.innerText+=m+'\n';e.scrollTop=e.scrollHeight;}
+function finish(){$('lst').innerText=t('done');$('lst').style.color='#4fcf7a';$('chk').style.display='block';
+ setTimeout(()=>{show('main');setRun(true);toast(t('done'),t('started'));},2200);}
+window.chrome.webview.addEventListener('message',e=>{const m=e.data;switch(m.type){
+ case 'init':lang=m.lang;theme=m.theme;nick=m.nick;ram=m.ram;applyTheme();applyLang();$('ram').value=ram;
+  if(m.state==='main'){setTier(m.tier);show('main');}else if(m.state==='autologin'){lock(true);flash('wait',t('checking'),true);}break;
+ case 'login_result':lock(false);
+  if(m.ok){setTier(m.tier);if(m.skip){show('main');}else{flash('ok',t('ok'));setTimeout(()=>show('main'),900);}}
+  else{flash('bad',t('e_'+m.msg)!=='e_'+m.msg?t('e_'+m.msg):t('fail'));show('key');}break;
+ case 'busy':setBusy(m.value);break;
+ case 'start_load':setBusy(false);startLoad();break;
+ case 'progress':progress(m.percent,m.current,m.total,m.status);break;
+ case 'finish_install':finish();break;
+ case 'launch_success':setBusy(false);setRun(true);toast(t('proc'),t('cache'));break;
+ case 'process_stopped':setRun(false);toast(t('proc'),t('ended'));break;
+ case 'set_ram':ram=m.value;$('ram').value=ram;setMem();break;
+ case 'set_nick':nick=m.value;$('nickIn').value=m.value;break;
+ case 'error':setBusy(false);if($('s-load').classList.contains('active'))err(m.message);else toast('error',(t('e_'+m.message)!=='e_'+m.message)?t('e_'+m.message):m.message);break;
+}});
+setRun(false);applyLang();applyTheme();
+</script></body></html>
