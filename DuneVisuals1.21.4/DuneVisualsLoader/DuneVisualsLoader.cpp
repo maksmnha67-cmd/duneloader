@@ -55,9 +55,9 @@ template <size_t N> struct ObfStr {
 };
 #define OBF(s) ([]() { static constexpr ObfStr<sizeof(s)> o(s); return o.get(); }())
 
-static std::string ApiHost() { return OBF("dune-api.dune-api67.workers.dev"); }
-static std::string PubX()    { return OBF("1dd03efa129179f15b859a02a23237b48e8cdd1d953dd5cac94583bf31570460"); }
-static std::string PubY()    { return OBF("63ce7ebc9e9ec8aaf4f25b5aac3f161611a34c2214e7fbe7b221a951b0e82232"); }
+static std::string ApiHost() { return OBF("dune-api.example.workers.dev"); }
+static std::string PubX()    { return OBF("0000000000000000000000000000000000000000000000000000000000000000"); }
+static std::string PubY()    { return OBF("0000000000000000000000000000000000000000000000000000000000000000"); }
 
 static const wchar_t* SITE_URL = L"https://dunevisualss.web.app";
 static const char* LAUNCHER_VER = "2.0";
@@ -182,17 +182,29 @@ static bool RegStringContainsAny(HKEY root, const wchar_t* path, const wchar_t* 
 // только "жёсткие" маркеры конкретных VM-продуктов (VMware/VirtualBox/QEMU/Xen) - специально
 // НЕ используем общий бит гипервизора CPUID/Hyper-V, потому что он включается у многих реальных
 // игровых ПК из-за WSL2, Docker Desktop, Device Guard/Core Isolation и даст ложные срабатывания.
-static bool IsKnownVmProcessRunning() {
-    static const wchar_t* names[] = { L"vmtoolsd.exe", L"vboxservice.exe", L"vboxtray.exe", L"qemu-ga.exe", L"xenservice.exe", L"vmusrvc.exe", L"vmsrvc.exe" };
+static bool IsAnyProcessRunning(std::initializer_list<const wchar_t*> names) {
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); if (snap == INVALID_HANDLE_VALUE) return false;
     PROCESSENTRY32W pe = { sizeof(pe) }; bool found = false;
     if (Process32FirstW(snap, &pe)) {
         do {
             std::wstring n = pe.szExeFile; std::transform(n.begin(), n.end(), n.begin(), ::towlower);
-            for (auto w : names) if (n == w) { found = true; break; }
+            for (auto w : names) { std::wstring ww(w); if (n == ww) { found = true; break; } }
         } while (!found && Process32NextW(snap, &pe));
     }
     CloseHandle(snap); return found;
+}
+static bool IsKnownVmProcessRunning() {
+    return IsAnyProcessRunning({ L"vmtoolsd.exe", L"vboxservice.exe", L"vboxtray.exe", L"qemu-ga.exe", L"xenservice.exe", L"vmusrvc.exe", L"vmsrvc.exe" });
+}
+// инструменты для дампа памяти процесса/реверса - если запущены, значит пытаются вытащить
+// код мода/лаунчера из RAM, а не просто поиграть
+static bool IsKnownDumpOrReverseToolRunning() {
+    return IsAnyProcessRunning({
+        L"x32dbg.exe", L"x64dbg.exe", L"x96dbg.exe", L"ollydbg.exe", L"ida.exe", L"ida64.exe",
+        L"dnspy.exe", L"de4dot.exe", L"cheatengine-x86_64.exe", L"cheatengine-i386.exe",
+        L"processhacker.exe", L"scylla.exe", L"scylla_x64.exe", L"scylla_x86.exe",
+        L"pe-sieve32.exe", L"pe-sieve64.exe", L"lordpe.exe", L"extremedumper.exe"
+    });
 }
 
 bool IsLikelyVirtualMachine() {
@@ -206,7 +218,21 @@ bool IsLikelyVirtualMachine() {
 
 bool IsBeingDebuggedNow() {
     if (IsDebuggerPresent()) return true;
-    BOOL remote = FALSE; CheckRemoteDebuggerPresent(GetCurrentProcess(), &remote); return remote != FALSE;
+    BOOL remote = FALSE; CheckRemoteDebuggerPresent(GetCurrentProcess(), &remote); if (remote) return true;
+
+    // NtQueryInformationProcess(ProcessDebugPort) - ловит часть обходов, которые патчат только IsDebuggerPresent
+    typedef LONG(WINAPI* NtQIP)(HANDLE, ULONG, PVOID, ULONG, PULONG);
+    static NtQIP qip = (NtQIP)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtQueryInformationProcess");
+    if (qip) {
+        LONG_PTR debugPort = 0;
+        if (qip(GetCurrentProcess(), 7 /*ProcessDebugPort*/, &debugPort, sizeof(debugPort), nullptr) >= 0 && debugPort != 0) return true;
+    }
+
+    // аппаратные точки останова (DR0-DR3) - их не ловит IsDebuggerPresent
+    CONTEXT ctx = {}; ctx.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+    if (GetThreadContext(GetCurrentThread(), &ctx) && (ctx.Dr0 || ctx.Dr1 || ctx.Dr2 || ctx.Dr3)) return true;
+
+    return IsKnownDumpOrReverseToolRunning();
 }
 
 // =====================================================================================
@@ -575,6 +601,30 @@ std::wstring GetSafeNickname() {
     return safe;
 }
 
+// без согласия пользователя дочернему java.exe не передаются переменные, которые умеют
+// незаметно подключать Java-агент (-javaagent) к запускаемому процессу: это самый прямой
+// способ вытащить байткод мода прямо во время игры, минуя любые проверки самого лаунчера
+static std::vector<wchar_t> BuildScrubbedEnvironmentBlock() {
+    static const wchar_t* blocked[] = { L"JAVA_TOOL_OPTIONS", L"_JAVA_OPTIONS", L"JDK_JAVA_OPTIONS", L"JAVA_OPTIONS" };
+    std::vector<wchar_t> out;
+    LPWCH envBlock = GetEnvironmentStringsW();
+    if (envBlock) {
+        for (LPWCH p = envBlock; *p; ) {
+            std::wstring entry(p); size_t eq = entry.find(L'=');
+            bool drop = false;
+            if (eq != std::wstring::npos) {
+                std::wstring name = entry.substr(0, eq); std::transform(name.begin(), name.end(), name.begin(), ::towupper);
+                for (auto b : blocked) if (name == b) { drop = true; break; }
+            }
+            if (!drop) out.insert(out.end(), entry.begin(), entry.end() + 1); // включая завершающий \0
+            p += entry.size() + 1;
+        }
+        FreeEnvironmentStringsW(envBlock);
+    }
+    out.push_back(0); // двойной \0 в конце блока
+    return out;
+}
+
 void LaunchGame() {
     std::wstring javawExe = FindJavaExe(true);
     if (javawExe.empty()) javawExe = FindJavaExe(false);
@@ -639,7 +689,8 @@ void LaunchGame() {
     STARTUPINFOW si = { sizeof(si) };
     if (hLog != INVALID_HANDLE_VALUE) { si.dwFlags |= STARTF_USESTDHANDLES; si.hStdError = hLog; si.hStdOutput = hLog; si.hStdInput = GetStdHandle(STD_INPUT_HANDLE); }
     PROCESS_INFORMATION pi;
-    if (CreateProcessW(NULL, cmdBuf.data(), NULL, NULL, TRUE, 0, NULL, md.c_str(), &si, &pi)) {
+    std::vector<wchar_t> envBlock = BuildScrubbedEnvironmentBlock();
+    if (CreateProcessW(NULL, cmdBuf.data(), NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, envBlock.data(), md.c_str(), &si, &pi)) {
         g_GamePID = pi.dwProcessId;
         if (GetTier() == "beta") { std::lock_guard<std::mutex> lk(g_Pm); g_P.betaDirty = true; } SavePrefs();
         HANDLE hPC = pi.hProcess, hLC = hLog; std::wstring elpCopy = elp;
