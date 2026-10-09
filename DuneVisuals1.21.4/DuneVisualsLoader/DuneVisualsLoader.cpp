@@ -55,9 +55,9 @@ template <size_t N> struct ObfStr {
 };
 #define OBF(s) ([]() { static constexpr ObfStr<sizeof(s)> o(s); return o.get(); }())
 
-static std::string ApiHost() { return OBF("dune-api.example.workers.dev"); }
-static std::string PubX()    { return OBF("0000000000000000000000000000000000000000000000000000000000000000"); }
-static std::string PubY()    { return OBF("0000000000000000000000000000000000000000000000000000000000000000"); }
+static std::string ApiHost() { return OBF("dune-api.dune-api67.workers.dev"); }
+static std::string PubX()    { return OBF("1dd03efa129179f15b859a02a23237b48e8cdd1d953dd5cac94583bf31570460"); }
+static std::string PubY()    { return OBF("63ce7ebc9e9ec8aaf4f25b5aac3f161611a34c2214e7fbe7b221a951b0e82232"); }
 
 static const wchar_t* SITE_URL = L"https://dunevisualss.web.app";
 static const char* LAUNCHER_VER = "2.0";
