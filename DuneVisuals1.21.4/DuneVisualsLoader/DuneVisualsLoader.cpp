@@ -3,6 +3,7 @@
 #include <shlobj.h>
 #include <shellapi.h>
 #include <shlwapi.h>
+#include <tlhelp32.h>
 #include <dwmapi.h>
 #include <bcrypt.h>
 #include <wincrypt.h>
@@ -54,12 +55,12 @@ template <size_t N> struct ObfStr {
 };
 #define OBF(s) ([]() { static constexpr ObfStr<sizeof(s)> o(s); return o.get(); }())
 
+static std::string ApiHost() { return OBF("dune-api.example.workers.dev"); }
+static std::string PubX()    { return OBF("0000000000000000000000000000000000000000000000000000000000000000"); }
+static std::string PubY()    { return OBF("0000000000000000000000000000000000000000000000000000000000000000"); }
 
 static const wchar_t* SITE_URL = L"https://dunevisualss.web.app";
-static const char* LAUNCHER_VER = "2.0";static std::string ApiHost() { return OBF("dune-api.dune-api67.workers.dev"); }
-static std::string PubX()    { return OBF("1dd03efa129179f15b859a02a23237b48e8cdd1d953dd5cac94583bf31570460"); }
-static std::string PubY()    { return OBF("63ce7ebc9e9ec8aaf4f25b5aac3f161611a34c2214e7fbe7b221a951b0e82232"); }
-
+static const char* LAUNCHER_VER = "2.0";
 std::wstring CHEAT_NAME = L"Dune Visuals";
 const std::wstring MC_VER = L"1.21.11";
 const std::wstring VERSION_NAME = L"Fabric 1.21.11";
@@ -164,12 +165,58 @@ std::string GetHwid() {
 }
 
 // =====================================================================================
+//  Анти-VM / анти-debug
+//  Это не непробиваемая защита (это невозможно для процесса на чужом ПК в принципе),
+//  а фильтр самых дешёвых и массовых способов анализа/дампа клиента.
+// =====================================================================================
+static bool RegStringContainsAny(HKEY root, const wchar_t* path, const wchar_t* value, std::initializer_list<const wchar_t*> needles) {
+    HKEY hk; if (RegOpenKeyExW(root, path, 0, KEY_READ, &hk) != ERROR_SUCCESS) return false;
+    wchar_t buf[256] = {}; DWORD sz = sizeof(buf) - sizeof(wchar_t); DWORD type = 0; bool found = false;
+    if (RegQueryValueExW(hk, value, NULL, &type, (LPBYTE)buf, &sz) == ERROR_SUCCESS && (type == REG_SZ || type == REG_EXPAND_SZ)) {
+        std::wstring s(buf); std::transform(s.begin(), s.end(), s.begin(), ::towlower);
+        for (auto n : needles) { std::wstring nn(n); std::transform(nn.begin(), nn.end(), nn.begin(), ::towlower); if (s.find(nn) != std::wstring::npos) { found = true; break; } }
+    }
+    RegCloseKey(hk); return found;
+}
+
+// только "жёсткие" маркеры конкретных VM-продуктов (VMware/VirtualBox/QEMU/Xen) - специально
+// НЕ используем общий бит гипервизора CPUID/Hyper-V, потому что он включается у многих реальных
+// игровых ПК из-за WSL2, Docker Desktop, Device Guard/Core Isolation и даст ложные срабатывания.
+static bool IsKnownVmProcessRunning() {
+    static const wchar_t* names[] = { L"vmtoolsd.exe", L"vboxservice.exe", L"vboxtray.exe", L"qemu-ga.exe", L"xenservice.exe", L"vmusrvc.exe", L"vmsrvc.exe" };
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); if (snap == INVALID_HANDLE_VALUE) return false;
+    PROCESSENTRY32W pe = { sizeof(pe) }; bool found = false;
+    if (Process32FirstW(snap, &pe)) {
+        do {
+            std::wstring n = pe.szExeFile; std::transform(n.begin(), n.end(), n.begin(), ::towlower);
+            for (auto w : names) if (n == w) { found = true; break; }
+        } while (!found && Process32NextW(snap, &pe));
+    }
+    CloseHandle(snap); return found;
+}
+
+bool IsLikelyVirtualMachine() {
+    if (IsKnownVmProcessRunning()) return true;
+    const wchar_t* bios = L"HARDWARE\\DESCRIPTION\\System\\BIOS";
+    if (RegStringContainsAny(HKEY_LOCAL_MACHINE, bios, L"SystemManufacturer", { L"vmware", L"virtualbox", L"innotek", L"qemu", L"xen" })) return true;
+    if (RegStringContainsAny(HKEY_LOCAL_MACHINE, bios, L"SystemProductName", { L"vmware", L"virtualbox", L"innotek", L"qemu", L"xen", L"kvm" })) return true;
+    if (RegStringContainsAny(HKEY_LOCAL_MACHINE, bios, L"BIOSVendor", { L"vmware", L"virtualbox", L"qemu", L"xen" })) return true;
+    return false;
+}
+
+bool IsBeingDebuggedNow() {
+    if (IsDebuggerPresent()) return true;
+    BOOL remote = FALSE; CheckRemoteDebuggerPresent(GetCurrentProcess(), &remote); return remote != FALSE;
+}
+
+// =====================================================================================
 //  Настройки пользователя: шифруются DPAPI (привязаны к Windows-пользователю), а не зашитым в exe AES-ключом
 // =====================================================================================
 struct Prefs {
     int ram = 4028; bool installed = false; bool dark = true; bool ru = true; bool hasPrefs = false;
     std::wstring nick = L"Player"; std::wstring modTag; std::wstring mcVer;
     std::string key; bool skipped = false;
+    bool betaDirty = false; // beta-jar сейчас лежит в mods и должен быть удалён при первой возможности
 };
 Prefs g_P; std::mutex g_Pm; 
 // текущий доступ: none | default | beta (доступ из разных потоков - через мьютекс)
@@ -186,7 +233,7 @@ void SavePrefs() {
     HKEY hKey; std::wstring regPath = L"SOFTWARE\\" + CHEAT_NAME;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, regPath.c_str(), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) != ERROR_SUCCESS) return;
     json j = { {"ram",g_P.ram},{"installed",g_P.installed},{"dark",g_P.dark},{"ru",g_P.ru},{"nick",WideToUtf8(g_P.nick)},
-               {"modTag",WideToUtf8(g_P.modTag)},{"mcVer",WideToUtf8(g_P.mcVer)},{"key",g_P.key},{"skipped",g_P.skipped} };
+               {"modTag",WideToUtf8(g_P.modTag)},{"mcVer",WideToUtf8(g_P.mcVer)},{"key",g_P.key},{"skipped",g_P.skipped},{"betaDirty",g_P.betaDirty} };
     std::string s = j.dump(); DATA_BLOB in = { (DWORD)s.size(), (BYTE*)s.data() }, ent = { (DWORD)sizeof(DPAPI_ENTROPY), (BYTE*)DPAPI_ENTROPY }, out = {};
     if (CryptProtectData(&in, NULL, &ent, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out)) {
         RegSetValueExW(hKey, L"State", 0, REG_BINARY, out.pbData, out.cbData); LocalFree(out.pbData);
@@ -210,7 +257,8 @@ void LoadPrefs() {
                     g_P.ram = std::clamp(j.value("ram", 4028), 1024, 65536); g_P.installed = j.value("installed", false);
                     g_P.dark = j.value("dark", true); g_P.ru = j.value("ru", g_P.ru); g_P.nick = Utf8ToWide(j.value("nick", std::string("Player")));
                     g_P.modTag = Utf8ToWide(j.value("modTag", std::string())); g_P.mcVer = Utf8ToWide(j.value("mcVer", std::string()));
-                    g_P.key = CleanKey(j.value("key", std::string())); g_P.skipped = j.value("skipped", false); g_P.hasPrefs = true;
+                    g_P.key = CleanKey(j.value("key", std::string())); g_P.skipped = j.value("skipped", false);
+                    g_P.betaDirty = j.value("betaDirty", false); g_P.hasPrefs = true;
                 }
             }
         }
@@ -266,6 +314,18 @@ bool DownloadFile(const std::string& url, const std::wstring& destPath, const st
     if (!expectSha.empty() && Sha256FileHex(destPath) != expectSha) { SendError("Integrity check failed"); fs::remove(destPath, ec); return false; }
     SendProgress(100, tr / 1048576.0, tr / 1048576.0, statusKey);
     return true;
+}
+
+// надёжное удаление: если файл на миг ещё занят (антивирус/только что закрытый процесс),
+// пробуем несколько раз, а в крайнем случае планируем удаление при следующей перезагрузке
+static bool RobustDeleteFile(const std::wstring& path) {
+    std::error_code ec;
+    for (int i = 0; i < 20; i++) {
+        if (!fs::exists(path, ec)) return true;
+        if (fs::remove(path, ec)) return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    }
+    return MoveFileExW(path.c_str(), NULL, MOVEFILE_DELAY_UNTIL_REBOOT) != 0;
 }
 
 bool UnzipWithPowerShell(const std::wstring& zipPath, const std::wstring& targetDir) {
@@ -469,9 +529,22 @@ std::string GetAssetIndex() {
     return "21";
 }
 
+// Beta-jar удаляется из mods при первой возможности после того, как игра перестала в нём нуждаться:
+// при обычном закрытии, падении, снятии через диспетчер задач, через кнопку "стоп" в лоадере,
+// закрытии самого окна лоадера, и (если ничего из этого не сработало - аварийное завершение) при
+// следующем запуске лоадера. Факт "jar сейчас установлен и должен быть удалён" хранится в
+// зашифрованных настройках (betaDirty), а не завязан на то, что происходит с процессом сейчас.
+// Конфиг мода (.minecraft/config) не трогаем - он лежит отдельно от mods.
+void CleanupBetaJarIfNeeded() {
+    bool dirty; { std::lock_guard<std::mutex> lk(g_Pm); dirty = g_P.betaDirty; }
+    if (!dirty) return;
+    RobustDeleteFile(GetModsDir() + MOD_FILENAME);
+    { std::lock_guard<std::mutex> lk(g_Pm); g_P.betaDirty = false; } SavePrefs();
+}
+
 void MonitorProcessThread(DWORD pid) {
     HANDLE h = OpenProcess(SYNCHRONIZE, FALSE, pid); if (h) { WaitForSingleObject(h, INFINITE); CloseHandle(h); }
-    g_GamePID = 0; SendType("process_stopped");
+    g_GamePID = 0; CleanupBetaJarIfNeeded(); SendType("process_stopped");
 }
 
 void LogCommandLine(const std::wstring& cmd) {
@@ -568,6 +641,7 @@ void LaunchGame() {
     PROCESS_INFORMATION pi;
     if (CreateProcessW(NULL, cmdBuf.data(), NULL, NULL, TRUE, 0, NULL, md.c_str(), &si, &pi)) {
         g_GamePID = pi.dwProcessId;
+        if (GetTier() == "beta") { std::lock_guard<std::mutex> lk(g_Pm); g_P.betaDirty = true; } SavePrefs();
         HANDLE hPC = pi.hProcess, hLC = hLog; std::wstring elpCopy = elp;
         std::thread([hPC, hLC, elpCopy]() {
             WaitForSingleObject(hPC, 30000); DWORD exitCode = 0; GetExitCodeProcess(hPC, &exitCode);
@@ -599,8 +673,11 @@ void LaunchGame() {
 
 void TerminateGame() {
     DWORD pid = g_GamePID; if (pid != 0) {
-        HANDLE h = OpenProcess(PROCESS_TERMINATE, FALSE, pid); if (h) { TerminateProcess(h, 0); CloseHandle(h); } g_GamePID = 0;
+        HANDLE h = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+        if (h) { TerminateProcess(h, 0); WaitForSingleObject(h, 5000); CloseHandle(h); }
+        g_GamePID = 0;
     }
+    CleanupBetaJarIfNeeded();
 }
 
 // =====================================================================================
@@ -765,12 +842,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
+void AntiDebugWatcher() {
+    for (;;) {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        if (IsBeingDebuggedNow()) { CleanupBetaJarIfNeeded(); ExitProcess(0); }
+    }
+}
+
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 #ifndef _DEBUG
-    // базовая защита от отладчика (релизная сборка)
-    BOOL remote = FALSE; CheckRemoteDebuggerPresent(GetCurrentProcess(), &remote);
-    if (IsDebuggerPresent() || remote) return 0;
+    // отладчик или VM, подключенные ещё до старта - выходим молча, без UI и без сети
+    if (IsBeingDebuggedNow() || IsLikelyVirtualMachine()) return 0;
 #endif
+    std::thread(AntiDebugWatcher).detach(); // дальше следим за подключением отладчика в рантайме
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     LoadPrefs();
     std::error_code ec0; fs::create_directories(GetBaseDir(), ec0);
