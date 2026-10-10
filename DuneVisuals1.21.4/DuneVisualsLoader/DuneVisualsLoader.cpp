@@ -74,7 +74,7 @@ std::atomic<DWORD> g_GamePID{ 0 };
 std::atomic<bool> g_CancelDownload{ false };
 std::atomic<bool> g_Busy{ false };
 
-const int WIN_W = 640, WIN_H = 420;
+const int WIN_W = 760, WIN_H = 480;
 
 // =====================================================================================
 //  Утилиты
