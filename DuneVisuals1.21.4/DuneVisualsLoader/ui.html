@@ -12,7 +12,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 svg{display:block}
 #app{display:flex;width:100%;height:100%}
 /* left */
-.left{position:relative;flex:0 0 190px;background:linear-gradient(180deg,rgba(6,10,24,.35),rgba(6,10,24,.8)),url(/bg.jpg) 61% center/cover #070b16;color:#fff}
+.left{position:relative;flex:0 0 190px;background:linear-gradient(180deg,rgba(8,8,9,.35),rgba(8,8,9,.82)),url(/bg.jpg) 61% center/cover #0b0b0c;filter:grayscale(1) contrast(1.05);color:#fff}
 .ver{position:absolute;top:19px;left:18px;font-size:10.5px;font-weight:600;color:#fff}
 .ttl{position:absolute;left:20px;bottom:86px;font-size:26px;font-weight:600;line-height:1.14;letter-spacing:-.2px}
 .tag{position:absolute;left:18px;bottom:20px;width:154px}
@@ -40,18 +40,18 @@ button.ring:hover{border-color:var(--bdh);background:linear-gradient(180deg,rgba
 .rb.on{color:var(--sel-ink);background:var(--sel-bg);box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .h{position:absolute;left:24px;top:22px;font-size:17px;font-weight:700}
 /* key */
-#flash{position:absolute;left:50%;top:166px;transform:translateX(-50%);width:230px;height:46px;transition:.3s;opacity:0}
+#flash{position:absolute;left:50%;top:180px;transform:translateX(-50%);width:260px;height:46px;transition:.3s;opacity:0}
 #flash.show{opacity:1}#flash .in{font-size:13.5px;text-align:center;padding:0 10px;line-height:1.1}
 #flash.ok{border-color:rgba(79,207,122,.5);background:rgba(40,150,85,.16)}#flash.ok .in{color:#5fd98a}
 #flash.bad{border-color:rgba(232,106,106,.5);background:rgba(190,50,50,.16)}#flash.bad .in{color:#ef7b7b}
 #flash.wait .in{color:var(--tx2)}
-.kin{position:absolute;left:50%;margin-left:-150px;top:214px;width:300px;height:52px}
+.kin{position:absolute;left:50%;margin-left:-150px;top:246px;width:300px;height:52px}
 .kbtn{position:absolute;left:50%;height:46px;font-size:14px}
 .khead{position:absolute;left:50%;top:72px;transform:translateX(-50%);width:360px;text-align:center;font-size:23px;font-weight:800;letter-spacing:-.3px}
 .ksub{position:absolute;left:50%;top:106px;transform:translateX(-50%);width:340px;text-align:center;font-size:13px;font-weight:500;line-height:1.45;color:var(--mute2)}
-#bLogin{top:288px;width:170px;margin-left:-85px}#bSkip{top:350px;width:140px;margin-left:-70px;height:42px}
+#bLogin{top:320px;width:170px;margin-left:-85px}#bSkip{top:382px;width:140px;margin-left:-70px;height:42px}
 /* main */
-.prev{position:absolute;left:22px;top:54px;width:470px;height:220px;border-radius:20px;background:linear-gradient(rgba(6,10,24,.15),rgba(6,10,24,.45)),url(/bg.jpg) center/cover;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1)}
+.prev{position:absolute;left:22px;top:54px;width:470px;height:220px;border-radius:20px;background:linear-gradient(rgba(8,8,9,.12),rgba(8,8,9,.4)),url(/bg.jpg) center/cover;filter:grayscale(1) contrast(1.05);box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1)}
 .chip{position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(10,10,12,.72);border:1px solid rgba(255,255,255,.18);color:#e7e8ea;backdrop-filter:blur(6px)}
 .chip.beta{color:#7fe0a0;border-color:rgba(80,200,130,.4)}
 #play{position:absolute;left:22px;top:298px;width:56px;height:56px;border-radius:18px}
@@ -155,7 +155,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 </div>
 <script>
 const $=id=>document.getElementById(id),post=m=>window.chrome.webview.postMessage(m);
-const SVG_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+const SVG_PLAY='<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M9 6.2v11.6c0 .9.98 1.44 1.72.95l8.5-5.8c.65-.44.65-1.42 0-1.86l-8.5-5.8C9.98 4.76 9 5.3 9 6.2z"/></svg>',
 SVG_STOP='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
 SVG_SPIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>';
 let lang='ru',theme='dark',nick='Player',tier='none',running=false,busy=false,ram=4028,tt,ft;
