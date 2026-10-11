@@ -53,7 +53,8 @@ button.ring:hover{border-color:var(--bdh);background:linear-gradient(180deg,rgba
 /* main */
 .prev{position:absolute;left:22px;top:54px;width:470px;height:220px;border-radius:20px;background:linear-gradient(rgba(8,8,9,.12),rgba(8,8,9,.4)),url(/bg.jpg) center/cover;filter:grayscale(1) contrast(1.05);box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1)}
 .chip{position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(10,10,12,.72);border:1px solid rgba(255,255,255,.18);color:#e7e8ea;backdrop-filter:blur(6px)}
-.chip.beta{color:#7fe0a0;border-color:rgba(80,200,130,.4)}
+.chip.beta{color:#e8c468;border-color:rgba(230,190,90,.45)}
+.chip.admin{color:#ff8a8a;border-color:rgba(255,90,90,.5);font-weight:800}
 #play{position:absolute;left:22px;top:298px;width:56px;height:56px;border-radius:18px}
 #play svg{width:24px;height:24px}
 #play.run{background:linear-gradient(180deg,var(--stop1),var(--stop2));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 8px 22px rgba(120,20,20,.4)}
@@ -74,6 +75,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .sg{flex:1;height:42px;border-radius:14px;font-size:12px;font-weight:700;color:var(--tx2);background:linear-gradient(180deg,var(--sf1),var(--sf2));border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;transition:.18s}.sg:hover{border-color:var(--bdh)}
 .sg svg{width:15px;height:15px}.sg.on{color:var(--sel-ink);border-color:transparent;background:var(--sel-bg);box-shadow:0 4px 10px rgba(0,0,0,.2)}
 #bBack{position:absolute;left:24px;bottom:20px;width:470px;height:44px;border-radius:14px;font-size:13px}
+.arow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--bd);font-size:12.5px}
+.arow:last-child{border-bottom:none}
+.arow .auid{font-weight:700;color:var(--tx3);width:88px;flex:none}
+.abadge{padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;background:rgba(255,255,255,.08);color:var(--mute2)}
+.abadge.admin{color:#ff8a8a;background:rgba(255,90,90,.12)}
+.abadge.banned{color:#ef7b7b;background:rgba(190,50,50,.16)}
+.anote{flex:1;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.amini{margin-left:auto;font-size:11px;font-weight:700;color:var(--mute2);flex:none}
+.amini:hover{color:var(--ink)}
 /* loading */
 .big{position:absolute;left:24px;top:26px;font-size:20px;font-weight:700}
 #lst{position:absolute;left:24px;top:68px;font-size:13.5px;font-weight:600;color:var(--mute2)}
@@ -104,6 +114,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <div class="rail hide" id="rail">
       <button class="rb" id="rHome" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9a1 1 0 01-1 1H5a1 1 0 01-1-1z"/><path d="M9.5 21v-6h5v6"/></svg></button>
       <button class="rb" id="rSet" onclick="goSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2" fill="var(--bg)"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="var(--bg)"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="11" cy="17" r="2" fill="var(--bg)"/></svg></button>
+      <button class="rb hide" id="rAdmin" onclick="goAdmin()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6z"/></svg></button>
       <button class="rb" onclick="post('open_site')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20 15.3 15.3 0 010-20z"/></svg></button>
     </div>
 
@@ -141,6 +152,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <button class="glass" id="bBack" onclick="goHome()"></button>
     </div>
 
+    <!-- admin -->
+    <div class="screen" id="s-admin">
+      <div class="h" id="hAdmin"></div>
+      <div class="f row" style="top:62px">
+        <div class="ring nick"><div class="in"><input id="adminUid" maxlength="16" spellcheck="false" autocomplete="off"></div></div>
+        <button class="glass sv" id="bBan" onclick="adminBan()"></button>
+        <button class="glass sv" id="bUnban" onclick="adminUnban()"></button>
+      </div>
+      <div class="f" id="adminList" style="top:118px;bottom:20px;overflow:auto"></div>
+    </div>
+
     <!-- loading -->
     <div class="screen" id="s-load">
       <div class="big" id="lTitle"></div><div id="lst"></div>
@@ -163,18 +185,20 @@ const L={ru:{key:'ваш ключ',login:'войти',skip:'пропустить
 khead:'С возвращением',ksub:'Введите бета-ключ, чтобы получить ранний доступ, или пропустите этот шаг — обычный клиент работает и без ключа.',
 desc:'Максимальная оптимизация, скорость и комфорт.',run:'клиент запущен\nнажмите, чтобы остановить.',mem:'память',settings:'Настройки',nick:'Никнейм',save:'Сохранить',
 ram:'Оперативная память',mods:'папка модов',chkey:'сменить ключ',back:'Сохранить и выйти',loading:'Загрузка',cancel:'Отменить',done:'Готово',
+admin:'Админ-панель',ban:'забанить',unban:'разбанить',uidPh:'UID',banOk:'Забанен',unbanOk:'Разбанен',needUid:'Введите UID',listErr:'Не удалось загрузить список',
 nSaved:'Никнейм сохранён',nEmpty:'Введите никнейм',cfg:'Конфигурация сохранена',proc:'Процесс',cache:'Запущен из кеша',ended:'Игра завершена',started:'Клиент запущен',
 st_dl_java:'Скачивание Java...',st_unz_java:'Распаковка Java...',st_dl_mod:'Скачивание мода...',st_upd_mod:'Обновление мода...',st_dl_fabric:'Скачивание Fabric API...',
 st_dl_game:'Скачивание Minecraft...',st_unz_game:'Распаковка Minecraft...',st_dl_assets:'Скачивание ассетов...',st_unz_assets:'Распаковка ассетов...',st_error:'Ошибка!',
-e_invalid_key:'неверный ключ',e_revoked:'ключ отключён',e_expired:'срок ключа истёк',e_bound_other_pc:'ключ привязан к другому ПК',e_rate_limited:'слишком много попыток',e_network:'нет соединения',e_signature:'ошибка подписи сервера',e_config:'лаунчер не настроен'},
+e_invalid_key:'неверный ключ',e_revoked:'ключ отключён',e_expired:'срок ключа истёк',e_bound_other_pc:'ключ привязан к другому ПК',e_rate_limited:'слишком много попыток',e_network:'нет соединения',e_signature:'ошибка подписи сервера',e_config:'лаунчер не настроен',e_banned:'это устройство заблокировано',e_forbidden:'нет доступа',e_not_found:'UID не найден',e_cannot_ban_admin:'нельзя забанить админа',e_not_bound:'этот аккаунт ещё ни разу не заходил'},
 en:{key:'your key',login:'login',skip:'skip',checking:'checking...',ok:'login successful',fail:'login failed',empty:'enter a key',
 khead:'Welcome back',ksub:'Enter a beta key for early access, or skip this step — the regular client works fine without one.',
 desc:'maximum optimization, speed, and comfort.',run:'client running\nclick to stop.',mem:'memory',settings:'Settings',nick:'Nickname',save:'Save',
 ram:'RAM',mods:'mods folder',chkey:'change key',back:'Save & Exit',loading:'Loading',cancel:'Cancel',done:'Done',
+admin:'Admin panel',ban:'ban',unban:'unban',uidPh:'UID',banOk:'Banned',unbanOk:'Unbanned',needUid:'Enter a UID',listErr:'Could not load the list',
 nSaved:'Nickname saved',nEmpty:'Enter a nickname',cfg:'Configuration saved',proc:'Process',cache:'Launched from cache',ended:'Game terminated',started:'Client launched',
 st_dl_java:'Downloading Java...',st_unz_java:'Extracting Java...',st_dl_mod:'Downloading mod...',st_upd_mod:'Updating mod...',st_dl_fabric:'Downloading Fabric API...',
 st_dl_game:'Downloading Minecraft...',st_unz_game:'Extracting Minecraft...',st_dl_assets:'Downloading assets...',st_unz_assets:'Extracting assets...',st_error:'Error!',
-e_invalid_key:'invalid key',e_revoked:'key disabled',e_expired:'key expired',e_bound_other_pc:'key is bound to another PC',e_rate_limited:'too many attempts',e_network:'no connection',e_signature:'server signature error',e_config:'launcher not configured'}};
+e_invalid_key:'invalid key',e_revoked:'key disabled',e_expired:'key expired',e_bound_other_pc:'key is bound to another PC',e_rate_limited:'too many attempts',e_network:'no connection',e_signature:'server signature error',e_config:'launcher not configured',e_banned:'this device has been blocked',e_forbidden:'access denied',e_not_found:'UID not found',e_cannot_ban_admin:'cannot ban an admin',e_not_bound:'this account has never logged in'}};
 const t=k=>L[lang][k]||k;
 function applyLang(){
  $('khead').innerText=t('khead');$('ksub').innerText=t('ksub');
@@ -182,14 +206,15 @@ function applyLang(){
  $('desc').innerText=running?t('run'):t('desc');$('hSet').innerText=t('settings');$('lNick').innerText=t('nick');$('bSave').innerText=t('save');
  $('lRam').innerText=t('ram');$('tMods').innerText=t('mods');$('tKey').innerText=t('chkey');$('bBack').innerText=t('back');
  $('lTitle').innerText=t('loading');$('bCancel').innerText=t('cancel');setMem();
+ $('hAdmin').innerText=t('admin');$('bBan').innerText=t('ban');$('bUnban').innerText=t('unban');$('adminUid').placeholder=t('uidPh');
  $('gRu').classList.toggle('on',lang==='ru');$('gEn').classList.toggle('on',lang==='en');}
 function applyTheme(){document.body.className=theme;$('gDark').classList.toggle('on',theme==='dark');$('gLight').classList.toggle('on',theme==='light');}
 function setMem(){$('mem').innerText=t('mem')+': '+(Math.round(ram/102.4)/10)+' gb';$('ramV').innerText=ram+'MB';}
-function show(n){['key','main','set','load'].forEach(s=>$('s-'+s).classList.toggle('active',s===n));
- $('rail').classList.toggle('hide',n==='key'||n==='load');$('rHome').classList.toggle('on',n==='main');$('rSet').classList.toggle('on',n==='set');}
+function show(n){['key','main','set','admin','load'].forEach(s=>$('s-'+s).classList.toggle('active',s===n));
+ $('rail').classList.toggle('hide',n==='key'||n==='load');$('rHome').classList.toggle('on',n==='main');$('rSet').classList.toggle('on',n==='set');$('rAdmin').classList.toggle('on',n==='admin');}
 function toast(a,b){$('tT').innerText=a;$('tD').innerText=b;$('toast').classList.add('show');clearTimeout(tt);tt=setTimeout(()=>$('toast').classList.remove('show'),3000);}
 function flash(kind,txt,keep){const f=$('flash');f.className='ring show '+kind;$('flashT').innerText=txt;clearTimeout(ft);if(!keep)ft=setTimeout(()=>f.classList.remove('show'),2800);}
-function setTier(x){tier=x;const c=$('chip');c.innerText=x==='beta'?'beta':'default';c.className='chip'+(x==='beta'?' beta':'');}
+function setTier(x){tier=x;const c=$('chip');c.innerText=x;c.className='chip'+(x==='beta'?' beta':x==='admin'?' admin':'');$('rAdmin').classList.toggle('hide',x!=='admin');}
 function setRun(r){running=r;const b=$('play');b.className='glass'+(r?' run':'');b.innerHTML=r?SVG_STOP:SVG_PLAY;$('desc').innerText=r?t('run'):t('desc');$('desc').style.whiteSpace=r?'pre-line':'normal';}
 function setBusy(v){busy=v;if(running)return;const b=$('play');b.className='glass'+(v?' spin':'');b.innerHTML=v?SVG_SPIN:SVG_PLAY;}
 function lock(v){$('bLogin').disabled=v;$('bSkip').disabled=v;$('keyIn').disabled=v;}
@@ -198,6 +223,30 @@ function doSkip(){post('skip');}
 function doLogout(){post('logout');$('keyIn').value='';show('key');}
 function goHome(){if($('s-set').classList.contains('active')){const r=$('ram').value;ram=+r;setMem();post('save_ram:'+r);toast(t('settings'),t('cfg'));}show('main');}
 function goSettings(){$('nickIn').value=nick;$('ram').value=ram;setMem();show('set');}
+function goAdmin(){show('admin');adminRefreshList();}
+function adminBan(){const u=$('adminUid').value.trim();if(!u){toast(t('admin'),t('needUid'));return;}post('admin_ban:'+u);}
+function adminUnban(){const u=$('adminUid').value.trim();if(!u){toast(t('admin'),t('needUid'));return;}post('admin_unban:'+u);}
+function adminRefreshList(){post('admin_list');}
+function renderAdminList(items){
+ const el=$('adminList');
+ if(!items||!items.length){el.innerHTML='';return;}
+ el.innerHTML=items.map(function(it){
+  var badges=(it.admin?'<span class="abadge admin">admin</span>':'')+(it.banned?'<span class="abadge banned">ban</span>':'');
+  var action='';
+  if(!it.admin){
+   var fn=it.banned?'adminUnban':'adminBan';
+   var label=it.banned?t('unban'):t('ban');
+   action='<span class="amini" data-uid="'+it.uid+'" data-fn="'+fn+'">'+label+'</span>';
+  }
+  return '<div class="arow"><span class="auid">'+it.uid+'</span>'+badges+'<span class="anote">'+(it.note||'')+'</span>'+action+'</div>';
+ }).join('');
+ el.querySelectorAll('.amini').forEach(function(elm){
+  elm.addEventListener('click',function(){
+   $('adminUid').value=elm.getAttribute('data-uid');
+   if(elm.getAttribute('data-fn')==='adminBan')adminBan();else adminUnban();
+  });
+ });
+}
 function saveNick(){let n=$('nickIn').value.trim().replace(/[^A-Za-z0-9_]/g,'').substring(0,16);if(!n){toast(t('nick'),t('nEmpty'));return;}$('nickIn').value=n;nick=n;post('save_nick:'+n);toast(t('nick'),t('nSaved')+': '+n);}
 function setLang(l){lang=l;applyLang();post('set_lang:'+l);}
 function setTheme(x){theme=x;applyTheme();post('set_theme:'+x);}
@@ -223,6 +272,11 @@ window.chrome.webview.addEventListener('message',e=>{const m=e.data;switch(m.typ
  case 'set_ram':ram=m.value;$('ram').value=ram;setMem();break;
  case 'set_nick':nick=m.value;$('nickIn').value=m.value;break;
  case 'error':setBusy(false);if($('s-load').classList.contains('active'))err(m.message);else toast('error',(t('e_'+m.message)!=='e_'+m.message)?t('e_'+m.message):m.message);break;
+ case 'admin_result':
+  if(m.op==='list'){if(m.ok)renderAdminList(m.items);else toast(t('admin'),t('listErr'));break;}
+  if(m.ok){toast(t('admin'),m.op==='ban'?t('banOk'):t('unbanOk'));adminRefreshList();}
+  else toast(t('admin'),(t('e_'+m.msg)!=='e_'+m.msg)?t('e_'+m.msg):m.msg);
+  break;
 }});
 setRun(false);applyLang();applyTheme();
 </script></body></html>

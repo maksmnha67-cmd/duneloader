@@ -243,11 +243,15 @@ struct Prefs {
     std::wstring nick = L"Player"; std::wstring modTag; std::wstring mcVer;
     std::string key; bool skipped = false;
     bool betaDirty = false; // beta-jar сейчас лежит в mods и должен быть удалён при первой возможности
+    std::string uid; // публичный id аккаунта с сервера - не секрет, можно показывать в интерфейсе
 };
 Prefs g_P; std::mutex g_Pm; 
 // текущий доступ: none | default | beta (доступ из разных потоков - через мьютекс)
 std::mutex g_TierM; std::string g_TierV = "none";
 std::string GetTier() { std::lock_guard<std::mutex> l(g_TierM); return g_TierV; }
+// "admin" ведёт себя как "beta" всюду, где речь о хранении ключа/привилегий скачивания beta-jar -
+// различие между ними только в бейдже интерфейса и доступе к админ-панели
+bool TierHasKey(const std::string& t) { return t == "beta" || t == "admin"; }
 void SetTier(const std::string& t) { std::lock_guard<std::mutex> l(g_TierM); g_TierV = t; }
 
 static const BYTE DPAPI_ENTROPY[] = { 0x44,0x75,0x6E,0x65,0x21,0x9B,0x33,0xC1,0x7A,0x05 };
@@ -259,7 +263,7 @@ void SavePrefs() {
     HKEY hKey; std::wstring regPath = L"SOFTWARE\\" + CHEAT_NAME;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, regPath.c_str(), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) != ERROR_SUCCESS) return;
     json j = { {"ram",g_P.ram},{"installed",g_P.installed},{"dark",g_P.dark},{"ru",g_P.ru},{"nick",WideToUtf8(g_P.nick)},
-               {"modTag",WideToUtf8(g_P.modTag)},{"mcVer",WideToUtf8(g_P.mcVer)},{"key",g_P.key},{"skipped",g_P.skipped},{"betaDirty",g_P.betaDirty} };
+               {"modTag",WideToUtf8(g_P.modTag)},{"mcVer",WideToUtf8(g_P.mcVer)},{"key",g_P.key},{"skipped",g_P.skipped},{"betaDirty",g_P.betaDirty},{"uid",g_P.uid} };
     std::string s = j.dump(); DATA_BLOB in = { (DWORD)s.size(), (BYTE*)s.data() }, ent = { (DWORD)sizeof(DPAPI_ENTROPY), (BYTE*)DPAPI_ENTROPY }, out = {};
     if (CryptProtectData(&in, NULL, &ent, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out)) {
         RegSetValueExW(hKey, L"State", 0, REG_BINARY, out.pbData, out.cbData); LocalFree(out.pbData);
@@ -284,6 +288,7 @@ void LoadPrefs() {
                     g_P.dark = j.value("dark", true); g_P.ru = j.value("ru", g_P.ru); g_P.nick = Utf8ToWide(j.value("nick", std::string("Player")));
                     g_P.modTag = Utf8ToWide(j.value("modTag", std::string())); g_P.mcVer = Utf8ToWide(j.value("mcVer", std::string()));
                     g_P.key = CleanKey(j.value("key", std::string())); g_P.skipped = j.value("skipped", false);
+                    g_P.uid = j.value("uid", std::string());
                     g_P.betaDirty = j.value("betaDirty", false); g_P.hasPrefs = true;
                 }
             }
@@ -373,7 +378,7 @@ bool UnzipWithPowerShell(const std::wstring& zipPath, const std::wstring& target
 //  Манифест с сервера (подписан, привязан к nonce - старый ответ подсунуть нельзя)
 // =====================================================================================
 struct FileRef { std::string url, sha256, name; long long size = 0; };
-struct Manifest { std::string tier, mc, modVersion; FileRef jre, mod, fabric, game, assets; };
+struct Manifest { std::string tier, mc, modVersion, uid; FileRef jre, mod, fabric, game, assets; };
 
 static FileRef ParseFile(const json& j, const char* k) {
     FileRef f; if (!j.contains(k) || !j[k].is_object()) return f; const json& o = j[k];
@@ -396,6 +401,7 @@ bool FetchManifest(const std::string& key, Manifest& m, std::string& err) {
     json mj = json::parse(man, nullptr, false);
     if (!mj.is_object() || mj.value("nonce", std::string()) != nonce) { err = "signature"; return false; }
     m.tier = mj.value("tier", std::string("default")); m.mc = mj.value("mc", std::string());
+    if (mj.contains("uid") && mj["uid"].is_string()) m.uid = mj["uid"].get<std::string>();
     m.jre = ParseFile(mj, "jre"); m.mod = ParseFile(mj, "mod"); m.fabric = ParseFile(mj, "fabric_api"); m.game = ParseFile(mj, "game"); m.assets = ParseFile(mj, "assets");
     m.modVersion = mj.contains("mod") ? mj["mod"].value("version", std::string()) : std::string();
     if (m.mc != WideToUtf8(MC_VER) || m.mod.url.empty() || m.modVersion.empty()) { err = "signature"; return false; }
@@ -692,7 +698,7 @@ void LaunchGame() {
     std::vector<wchar_t> envBlock = BuildScrubbedEnvironmentBlock();
     if (CreateProcessW(NULL, cmdBuf.data(), NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, envBlock.data(), md.c_str(), &si, &pi)) {
         g_GamePID = pi.dwProcessId;
-        if (GetTier() == "beta") { std::lock_guard<std::mutex> lk(g_Pm); g_P.betaDirty = true; } SavePrefs();
+        if (TierHasKey(GetTier())) { std::lock_guard<std::mutex> lk(g_Pm); g_P.betaDirty = true; } SavePrefs();
         HANDLE hPC = pi.hProcess, hLC = hLog; std::wstring elpCopy = elp;
         std::thread([hPC, hLC, elpCopy]() {
             WaitForSingleObject(hPC, 30000); DWORD exitCode = 0; GetExitCodeProcess(hPC, &exitCode);
@@ -789,16 +795,33 @@ bool UpdateModAndLaunch(const Manifest& m) {
     return ok;
 }
 
-void SendLogin(bool ok, const std::string& tier, const std::string& msg, bool skip = false) {
-    json j; j["type"] = "login_result"; j["ok"] = ok; j["tier"] = tier; j["msg"] = msg; j["skip"] = skip; SafePostJson(j);
+void SendLogin(bool ok, const std::string& tier, const std::string& msg, bool skip = false, const std::string& uid = "") {
+    json j; j["type"] = "login_result"; j["ok"] = ok; j["tier"] = tier; j["msg"] = msg; j["skip"] = skip; j["uid"] = uid; SafePostJson(j);
+}
+
+// =====================================================================================
+//  Админ-панель: лоадер - только тонкий клиент. Он просто пересылает текущий ключ
+//  пользователя на /v1/admin, а admin:true у этого ключа каждый раз перепроверяет сам
+//  сервер - подделать это со стороны лоадера нельзя.
+// =====================================================================================
+void CallAdminApi(const std::string& op, const std::string& targetUid) {
+    std::string key; { std::lock_guard<std::mutex> lk(g_Pm); key = g_P.key; }
+    json req = { {"key",key},{"op",op} }; if (!targetUid.empty()) req["target_uid"] = targetUid;
+    std::string resp; DWORD st = 0; json out = { {"type","admin_result"},{"op",op} };
+    if (!HttpPostJson(ApiHost(), L"/v1/admin", req.dump(), resp, st)) { out["ok"] = false; out["msg"] = "network"; SafePostJson(out); return; }
+    json j = json::parse(resp, nullptr, false);
+    if (!j.is_object()) { out["ok"] = false; out["msg"] = "network"; SafePostJson(out); return; }
+    out["ok"] = j.value("ok", false); out["msg"] = j.value("msg", std::string());
+    if (j.contains("items") && j["items"].is_array()) out["items"] = j["items"];
+    SafePostJson(out);
 }
 
 void LoginThread(std::string key) {
     Manifest m; std::string err;
     if (FetchManifest(key, m, err)) {
         SetTier(m.tier);
-        { std::lock_guard<std::mutex> lk(g_Pm); g_P.key = (m.tier == "beta") ? key : ""; g_P.skipped = (m.tier != "beta"); } SavePrefs();
-        SendLogin(true, m.tier, "");
+        { std::lock_guard<std::mutex> lk(g_Pm); g_P.key = TierHasKey(m.tier) ? key : ""; g_P.skipped = !TierHasKey(m.tier); g_P.uid = m.uid; } SavePrefs();
+        SendLogin(true, m.tier, "", false, m.uid);
     }
     else {
         if (err != "network" && err != "config") { std::lock_guard<std::mutex> lk(g_Pm); g_P.key.clear(); }
@@ -818,10 +841,10 @@ void StartProcessLogic() {
         std::wstring versionJar = GetVersionDir() + VERSION_NAME + L".jar", modPath = GetModsDir() + MOD_FILENAME;
         bool coreOk = p.installed && p.mcVer == MC_VER && fs::exists(versionJar) && fs::exists(GetBaseDir() + L"jre");
 
-        if (!FetchManifest(tier == "beta" ? p.key : "", m, err)) {
+        if (!FetchManifest(TierHasKey(tier) ? p.key : "", m, err)) {
             bool keyProblem = (err == "invalid_key" || err == "revoked" || err == "expired" || err == "bound_other_pc");
             if (keyProblem) { SetTier("none"); { std::lock_guard<std::mutex> lk(g_Pm); g_P.key.clear(); } SavePrefs(); SendLogin(false, "none", err); }
-            else if (tier != "beta" && coreOk && fs::exists(modPath) && err == "network") { SendType("launch_success"); LaunchGame(); } // default: можно из кеша без сети
+            else if (!TierHasKey(tier) && coreOk && fs::exists(modPath) && err == "network") { SendType("launch_success"); LaunchGame(); } // default: можно из кеша без сети
             else SendError(err);
             return;
         }
@@ -851,6 +874,9 @@ void HandleUiMessage(const std::wstring& msg) {
     else if (msg == L"drag_window") { ReleaseCapture(); SendMessage(g_hWnd, WM_NCLBUTTONDOWN, HTCAPTION, 0); }
     else if (msg == L"action_button") StartProcessLogic();
     else if (msg == L"cancel_install") g_CancelDownload = true;
+    else if (msg == L"admin_list") std::thread(CallAdminApi, "list", "").detach();
+    else if (msg.rfind(L"admin_ban:", 0) == 0) { std::string u = CleanKey(WideToUtf8(msg.substr(10))); std::thread(CallAdminApi, "ban", u).detach(); }
+    else if (msg.rfind(L"admin_unban:", 0) == 0) { std::string u = CleanKey(WideToUtf8(msg.substr(12))); std::thread(CallAdminApi, "unban", u).detach(); }
     else if (msg == L"open_site") ShellExecuteW(nullptr, L"open", SITE_URL, nullptr, nullptr, SW_SHOWNORMAL);
     else if (msg == L"open_mods") { std::error_code ec; fs::create_directories(GetModsDir(), ec); ShellExecuteW(nullptr, L"open", GetModsDir().c_str(), nullptr, nullptr, SW_SHOWNORMAL); }
     else if (msg == L"skip") {
@@ -879,7 +905,7 @@ void SendInit() {
     if (!p.key.empty()) state = "autologin";
     else if (p.skipped) { state = "main"; SetTier("default"); }
     json j; j["type"] = "init"; j["lang"] = p.ru ? "ru" : "en"; j["theme"] = p.dark ? "dark" : "light"; j["nick"] = WideToUtf8(p.nick);
-    j["ram"] = p.ram; j["state"] = state; j["tier"] = GetTier(); SafePostJson(j);
+    j["ram"] = p.ram; j["state"] = state; j["tier"] = GetTier(); j["uid"] = p.uid; SafePostJson(j);
     if (state == "autologin") std::thread(LoginThread, p.key).detach();
 }
 
@@ -896,7 +922,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 void AntiDebugWatcher() {
     for (;;) {
         std::this_thread::sleep_for(std::chrono::seconds(2));
-        if (IsBeingDebuggedNow()) { CleanupBetaJarIfNeeded(); ExitProcess(0); }
+        // TerminateGame() уже и убивает запущенный Minecraft, и (теперь, когда jar
+        // гарантированно не занят процессом) надёжно удаляет beta-jar - раньше тут
+        // стоял только CleanupBetaJarIfNeeded(), который чистит файл, но не трогает
+        // саму игру: она продолжала работать и жарить файл из-под себя
+        if (IsBeingDebuggedNow()) { TerminateGame(); ExitProcess(0); }
     }
 }
 
