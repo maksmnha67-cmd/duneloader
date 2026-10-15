@@ -84,6 +84,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .anote{flex:1;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .amini{margin-left:auto;font-size:11px;font-weight:700;color:var(--mute2);flex:none}
 .amini:hover{color:var(--ink)}
+.ahwid{font-family:"Courier New",monospace;font-size:10px;color:var(--mute);user-select:text;-webkit-user-select:text;flex:none}
 /* loading */
 .big{position:absolute;left:24px;top:26px;font-size:20px;font-weight:700}
 #lst{position:absolute;left:24px;top:68px;font-size:13.5px;font-weight:600;color:var(--mute2)}
@@ -223,7 +224,7 @@ function doSkip(){post('skip');}
 function doLogout(){post('logout');$('keyIn').value='';show('key');}
 function goHome(){if($('s-set').classList.contains('active')){const r=$('ram').value;ram=+r;setMem();post('save_ram:'+r);toast(t('settings'),t('cfg'));}show('main');}
 function goSettings(){$('nickIn').value=nick;$('ram').value=ram;setMem();show('set');}
-function goAdmin(){show('admin');adminRefreshList();}
+function goAdmin(){if(tier!=='admin')return;show('admin');adminRefreshList();}
 function adminBan(){const u=$('adminUid').value.trim();if(!u){toast(t('admin'),t('needUid'));return;}post('admin_ban:'+u);}
 function adminUnban(){const u=$('adminUid').value.trim();if(!u){toast(t('admin'),t('needUid'));return;}post('admin_unban:'+u);}
 function adminRefreshList(){post('admin_list');}
@@ -232,13 +233,15 @@ function renderAdminList(items){
  if(!items||!items.length){el.innerHTML='';return;}
  el.innerHTML=items.map(function(it){
   var badges=(it.admin?'<span class="abadge admin">admin</span>':'')+(it.banned?'<span class="abadge banned">ban</span>':'');
+  var hwidTxt=it.hwid?(it.hwid.slice(0,10)+'…'):'—';
+  var hwidSpan='<span class="ahwid" title="'+(it.hwid||'')+'">'+hwidTxt+'</span>';
   var action='';
   if(!it.admin){
    var fn=it.banned?'adminUnban':'adminBan';
    var label=it.banned?t('unban'):t('ban');
    action='<span class="amini" data-uid="'+it.uid+'" data-fn="'+fn+'">'+label+'</span>';
   }
-  return '<div class="arow"><span class="auid">'+it.uid+'</span>'+badges+'<span class="anote">'+(it.note||'')+'</span>'+action+'</div>';
+  return '<div class="arow"><span class="auid">'+it.uid+'</span>'+badges+hwidSpan+'<span class="anote">'+(it.note||'')+'</span>'+action+'</div>';
  }).join('');
  el.querySelectorAll('.amini').forEach(function(elm){
   elm.addEventListener('click',function(){
