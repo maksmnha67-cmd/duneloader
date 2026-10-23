@@ -80,6 +80,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .arow .auid{font-weight:700;color:var(--tx3);width:88px;flex:none}
 .abadge{padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;background:rgba(255,255,255,.08);color:var(--mute2)}
 .abadge.admin{color:#ff8a8a;background:rgba(255,90,90,.12)}
+.abadge.beta{color:#e8c468;background:rgba(230,190,90,.14)}
 .abadge.banned{color:#ef7b7b;background:rgba(190,50,50,.16)}
 .anote{flex:1;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .amini{margin-left:auto;font-size:11px;font-weight:700;color:var(--mute2);flex:none}
@@ -232,7 +233,7 @@ function renderAdminList(items){
  const el=$('adminList');
  if(!items||!items.length){el.innerHTML='';return;}
  el.innerHTML=items.map(function(it){
-  var badges=(it.admin?'<span class="abadge admin">admin</span>':'')+(it.banned?'<span class="abadge banned">ban</span>':'');
+  var badges=(it.admin?'<span class="abadge admin">admin</span>':'<span class="abadge beta">beta</span>')+(it.banned?'<span class="abadge banned">ban</span>':'');
   var hwidTxt=it.hwid?(it.hwid.slice(0,10)+'…'):'—';
   var hwidSpan='<span class="ahwid" title="'+(it.hwid||'')+'">'+hwidTxt+'</span>';
   var action='';
