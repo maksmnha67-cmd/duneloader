@@ -12,10 +12,12 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 svg{display:block}
 #app{display:flex;width:100%;height:100%}
 /* left */
-.left{position:relative;flex:0 0 190px;background:linear-gradient(180deg,rgba(8,8,9,.35),rgba(8,8,9,.82)),url(/bg.jpg) 61% center/cover #0b0b0c;filter:grayscale(1) contrast(1.05);color:#fff}
-.ver{position:absolute;top:19px;left:18px;font-size:10.5px;font-weight:600;color:#fff}
-.ttl{position:absolute;left:20px;bottom:86px;font-size:26px;font-weight:600;line-height:1.14;letter-spacing:-.2px}
-.tag{position:absolute;left:18px;bottom:20px;width:154px}
+.left{position:relative;flex:0 0 190px;overflow:hidden;color:#fff}
+.left::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,9,.35),rgba(8,8,9,.82)),url(/bg.jpg) 61% center/cover #0b0b0c;filter:grayscale(1) contrast(1.05)}
+.ver,.ttl,.tag{position:absolute;z-index:1}
+.ver{top:19px;left:18px;font-size:10.5px;font-weight:600;color:#fff}
+.ttl{left:20px;bottom:86px;font-size:26px;font-weight:600;line-height:1.14;letter-spacing:-.2px}
+.tag{left:18px;bottom:20px;width:154px}
 /* shared look */
 .glass{display:flex;align-items:center;justify-content:center;border-radius:16px;font-weight:600;color:#f1f1f2;background:linear-gradient(180deg,var(--g1),var(--g2));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -6px 14px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.4);transition:.18s}
 .glass:hover{filter:brightness(1.12);transform:translateY(-1px)}.glass:active{transform:scale(.97)}
@@ -51,8 +53,9 @@ button.ring:hover{border-color:var(--bdh);background:linear-gradient(180deg,rgba
 .ksub{position:absolute;left:50%;top:106px;transform:translateX(-50%);width:340px;text-align:center;font-size:13px;font-weight:500;line-height:1.45;color:var(--mute2)}
 #bLogin{top:320px;width:170px;margin-left:-85px}#bSkip{top:382px;width:140px;margin-left:-70px;height:42px}
 /* main */
-.prev{position:absolute;left:22px;top:54px;width:470px;height:220px;border-radius:20px;background:linear-gradient(rgba(8,8,9,.12),rgba(8,8,9,.4)),url(/bg.jpg) center/cover;filter:grayscale(1) contrast(1.05);box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1)}
-.chip{position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(10,10,12,.72);border:1px solid rgba(255,255,255,.18);color:#e7e8ea;backdrop-filter:blur(6px)}
+.prev{position:absolute;left:22px;top:54px;width:470px;height:220px;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1)}
+.prev::before{content:'';position:absolute;inset:0;background:linear-gradient(rgba(8,8,9,.12),rgba(8,8,9,.4)),url(/bg.jpg) center/cover;filter:grayscale(1) contrast(1.05)}
+.chip{position:absolute;z-index:1;top:12px;left:12px;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(10,10,12,.72);border:1px solid rgba(255,255,255,.18);color:#e7e8ea;backdrop-filter:blur(6px)}
 .chip.beta{color:#2a1f05;border-color:#e8b84b;background:#e8b84b}
 .chip.admin{color:#fff;border-color:#d6433a;background:#d6433a;font-weight:800}
 #play{position:absolute;left:22px;top:298px;width:56px;height:56px;border-radius:18px}
