@@ -14,8 +14,10 @@ svg{display:block}
 /* left */
 .left{position:relative;flex:0 0 190px;overflow:hidden;color:#fff}
 .left::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,9,.35),rgba(8,8,9,.82)),url(/bg.jpg) 61% center/cover #0b0b0c;filter:grayscale(1) contrast(1.05)}
-.ver,.ttl,.tag{position:absolute;z-index:1}
+.ver,.ttl,.tag,.logomark{position:absolute;z-index:1}
 .ver{top:19px;left:18px;font-size:10.5px;font-weight:600;color:#fff}
+.logomark{left:19px;bottom:160px;width:52px;height:46px;color:#fff}
+.logomark svg{width:100%;height:100%;display:block}
 .ttl{left:20px;bottom:86px;font-size:26px;font-weight:600;line-height:1.14;letter-spacing:-.2px}
 .tag{left:18px;bottom:20px;width:154px}
 /* shared look */
@@ -53,12 +55,12 @@ button.ring:hover{border-color:var(--bdh);background:linear-gradient(180deg,rgba
 .ksub{position:absolute;left:50%;top:106px;transform:translateX(-50%);width:340px;text-align:center;font-size:13px;font-weight:500;line-height:1.45;color:var(--mute2)}
 #bLogin{top:320px;width:170px;margin-left:-85px}#bSkip{top:382px;width:140px;margin-left:-70px;height:42px}
 /* main */
-.prev{position:absolute;left:22px;top:54px;width:470px;height:220px;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1)}
+.prev{position:absolute;left:22px;top:54px;width:470px;height:220px;border-radius:42px 26px 46px 30px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.1)}
 .prev::before{content:'';position:absolute;inset:0;background:linear-gradient(rgba(8,8,9,.12),rgba(8,8,9,.4)),url(/bg.jpg) center/cover;filter:grayscale(1) contrast(1.05)}
 .chip{position:absolute;z-index:1;top:12px;left:12px;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(10,10,12,.72);border:1px solid rgba(255,255,255,.18);color:#e7e8ea;backdrop-filter:blur(6px)}
 .chip.beta{color:#2a1f05;border-color:#e8b84b;background:#e8b84b}
 .chip.admin{color:#fff;border-color:#d6433a;background:#d6433a;font-weight:800}
-#play{position:absolute;left:22px;top:298px;width:56px;height:56px;border-radius:18px}
+#play{position:absolute;left:22px;top:298px;width:56px;height:56px;border-radius:38% 62% 56% 44%/44% 38% 62% 56%}
 #play svg{width:24px;height:24px}
 #play.run{background:linear-gradient(180deg,var(--stop1),var(--stop2));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 8px 22px rgba(120,20,20,.4)}
 #play.spin svg{animation:sp 1s linear infinite}
@@ -109,6 +111,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div id="app">
   <div class="left">
     <div class="ver">minecraft 1.21.11 / launcher 2.0</div>
+    <div class="logomark"><svg viewBox="0 0 1171 1003"><g transform="translate(0.000000,1003.000000) scale(0.100000,-0.100000)" fill="currentColor"><path d="M0 5015 l0 -5015 5855 0 5855 0 0 5015 0 5015 -5855 0 -5855 0 0 -5015z m3302 3394 c69 -10 198 -47 263 -75 71 -30 213 -86 255 -101 25 -8 50 -19 55 -23 15 -13 91 -36 255 -80 186 -50 591 -68 940 -42 299 22 428 32 517 42 161 18 470 12 638 -11 83 -12 178 -24 211 -29 34 -4 66 -10 71 -13 5 -4 34 -10 64 -16 85 -15 221 -50 256 -66 17 -8 35 -15 39 -15 8 0 113 -38 169 -60 77 -31 308 -148 394 -200 58 -34 112 -65 120 -68 9 -3 39 -23 68 -44 29 -21 55 -38 58 -38 4 0 36 -25 71 -55 36 -30 68 -55 72 -55 4 0 23 -15 43 -33 19 -17 66 -57 105 -89 75 -61 147 -135 264 -268 75 -85 204 -248 227 -285 16 -27 132 -216 161 -263 30 -49 157 -308 178 -363 13 -36 52 -143 86 -239 35 -97 83 -297 108 -445 7 -38 16 -86 20 -105 23 -95 32 -276 26 -520 -7 -287 -21 -422 -65 -615 -25 -110 -41 -175 -56 -225 -9 -30 -20 -68 -25 -85 -17 -62 -86 -255 -115 -320 -57 -129 -191 -380 -260 -485 -34 -52 -74 -114 -88 -137 -41 -66 -123 -166 -241 -297 -138 -154 -242 -255 -361 -349 -11 -9 -50 -40 -86 -69 -280 -226 -671 -434 -967 -514 -289 -77 -677 -91 -987 -34 -154 29 -224 44 -260 55 -22 7 -67 19 -100 26 -33 7 -64 16 -70 20 -5 3 -26 10 -45 14 -19 4 -55 13 -80 20 -107 32 -287 88 -307 96 -28 10 -169 45 -288 70 -137 29 -403 44 -554 31 -143 -13 -337 -58 -436 -101 -11 -5 -38 -17 -60 -27 -22 -9 -75 -39 -117 -66 -43 -26 -80 -48 -83 -48 -3 0 -26 -15 -52 -34 -50 -35 -142 -80 -228 -111 -27 -10 -54 -21 -60 -25 -48 -32 -305 -45 -420 -21 -94 20 -209 74 -263 125 -55 51 -132 179 -169 283 -32 88 -20 437 17 528 5 11 17 49 28 85 17 55 74 214 127 350 7 19 25 67 40 105 15 39 37 93 50 120 12 28 42 100 65 160 23 61 46 118 51 128 14 26 89 221 89 230 0 5 6 23 14 40 14 32 48 126 80 222 9 28 16 62 16 77 0 15 4 29 9 32 5 3 16 36 26 73 9 38 21 77 25 88 19 46 42 129 51 183 44 278 50 340 50 592 0 135 -5 279 -11 320 -6 41 -15 104 -20 140 -12 88 -25 151 -50 240 -47 168 -71 257 -76 285 -7 37 -131 428 -150 472 -8 17 -14 37 -14 45 0 8 -3 18 -7 22 -9 9 -29 64 -97 273 -21 62 -43 134 -50 160 -8 27 -21 75 -31 108 -69 248 -93 547 -55 700 18 76 42 149 51 160 5 5 9 16 9 25 0 22 104 177 153 228 84 87 216 161 332 186 75 17 291 19 387 5z M5129 6655 c-105 -17 -163 -42 -239 -100 -122 -94 -178 -192 -220 -385 -47 -216 -63 -291 -70 -335 -4 -27 -15 -84 -25 -125 -9 -41 -21 -102 -25 -135 -5 -33 -15 -100 -24 -150 -49 -272 -67 -652 -42 -879 30 -271 38 -330 48 -371 5 -22 13 -60 18 -85 4 -25 15 -70 24 -100 10 -30 21 -71 26 -90 31 -125 112 -307 171 -385 95 -128 240 -236 358 -267 102 -28 572 -32 676 -7 151 37 297 85 365 119 110 54 261 146 330 199 107 82 341 341 391 431 10 19 23 42 29 50 31 50 140 296 140 317 0 7 4 21 10 31 5 9 21 62 36 117 26 101 38 194 50 383 15 235 -52 541 -172 787 -13 28 -24 54 -24 58 0 5 -19 41 -42 80 -194 332 -556 645 -858 743 -30 9 -69 23 -86 30 -44 19 -137 44 -224 61 -110 21 -510 26 -621 8z"/></g></svg></div>
     <div class="ttl">Dune<br>Visuals</div>
     <button class="glass tag" style="height:46px;font-size:13px" onclick="post('open_site')">the best visuals</button>
   </div>
