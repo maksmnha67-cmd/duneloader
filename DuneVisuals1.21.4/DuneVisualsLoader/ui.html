@@ -25,16 +25,16 @@ svg{display:block}
 background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
 /* ---------- left: brand panel ---------- */
-.left{position:relative;flex:0 0 190px;overflow:hidden;color:#fff}
+.left{position:relative;flex:0 0 240px;overflow:hidden;color:#fff}
 .left::before{content:'';position:absolute;inset:0;background:linear-gradient(175deg,rgba(7,7,8,.4),rgba(7,7,8,.86)),url(/bg.jpg) 61% center/cover #0a0a0b;filter:grayscale(1) contrast(1.08)}
 .ver,.ttl,.tag,.logomark{position:absolute;z-index:1}
 .ver{top:19px;left:18px;font-size:10.5px;font-weight:600;color:#fff;opacity:.85;letter-spacing:.2px}
-.logomark{left:17px;bottom:158px;width:54px;height:48px;color:#fff;filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
-.logomark::before{content:'';position:absolute;left:50%;top:50%;width:120px;height:120px;transform:translate(-50%,-50%);
-background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);z-index:-1}
+.logomark{left:20px;bottom:172px;width:66px;height:58px;color:#fff;filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
+.logomark::before{content:'';position:absolute;left:50%;top:50%;width:150px;height:150px;transform:translate(-50%,-50%);
+background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);z-index:-1}
 .logomark svg{width:100%;height:100%;display:block;position:relative}
-.ttl{left:19px;bottom:86px;font-size:25px;font-weight:700;line-height:1.1;letter-spacing:-.3px}
-.tag{left:17px;bottom:19px;width:156px}
+.ttl{left:22px;bottom:92px;font-size:30px;font-weight:700;line-height:1.08;letter-spacing:-.4px}
+.tag{left:20px;bottom:20px;width:200px}
 
 /* ---------- shared "liquid glass" material: soft asymmetric radius + edge-lit sheen instead of a flat 1px border ---------- */
 .glass{display:flex;align-items:center;justify-content:center;border-radius:var(--rA);font-weight:600;color:#f1f1f2;
@@ -63,8 +63,8 @@ background:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}.
 .screen.active{opacity:1;pointer-events:all;transform:none}
 .rail{position:absolute;right:18px;top:56px;display:flex;flex-direction:column;align-items:center;gap:12px;z-index:6;transition:.3s}
 .rail.hide{opacity:0;pointer-events:none}
-.rb{width:38px;height:38px;border-radius:13px 9px 14px 10px;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:.18s}
-.rb svg{width:18px;height:18px}.rb:hover{background:rgba(255,255,255,.12)}
+.rb{width:46px;height:46px;border-radius:15px 10px 16px 11px;display:flex;align-items:center;justify-content:center;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);transition:.18s}
+.rb svg{width:21px;height:21px}.rb:hover{background:rgba(255,255,255,.14)}
 .rb.on{color:var(--sel-ink);background:var(--sel-bg);border-radius:var(--rC);box-shadow:0 5px 14px rgba(0,0,0,.3)}
 .h{position:absolute;left:24px;top:22px;font-size:17px;font-weight:700}
 
